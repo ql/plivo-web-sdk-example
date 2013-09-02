@@ -31,6 +31,7 @@
         <script type="text/javascript" src="http://s3.amazonaws.com/plivosdk/web/plivo.min.js"></script>
 
             <script type="text/javascript">
+                var interval = null;
 
                 function webrtcNotSupportedAlert() {
                     $('#txtStatus').text("");
@@ -111,6 +112,7 @@
                     $('#login_box').hide();
                     $('#logout_box').show();
                     $('#callcontainer').show();
+                    initCalls();
                 }
 
                 function onLoginFailed() {
@@ -119,6 +121,7 @@
 
                 function onLogout() {
                     initUI();
+                    clearInterval(interval);
                 }
 
                 function onCalling() {
@@ -232,6 +235,26 @@
                     Plivo.conn.reject();
                 }
 
+                function getCalls() {
+                  $.get('http://dev.wheely.com:2233/calls/',
+                    function(data, testStatus, jXHR) {
+                      var html = '<ol>';
+                      $(data).each(function(index, elem) {
+                        html += '<li class="calln" number="' + elem['number'] + '">' + elem['number'] + '</li>';
+                      })
+                      $('#calls-container').html(html);
+                      $('.calln').click(function() {
+                        console.log('Clicked '+$(this).attr('number'));
+                        $.get('http://dev.wheely.com:2233/calls/'+$(this).attr('number')+'/transfer', function(a,b,c) {})
+                      })
+                  }) 
+                }
+
+                function initCalls() {
+                  getCalls();
+                  interval = setInterval(getCalls, 5000);
+                }
+
                 $(document).ready(function() {
                     Plivo.onWebrtcNotSupported = webrtcNotSupportedAlert;
                     Plivo.onReady = onReady;
@@ -248,6 +271,7 @@
                     Plivo.onIncomingCallCanceled = onIncomingCallCanceled;
                     Plivo.init();
 
+                    Plivo.conn.login('agent2130716142040', '123456');
                 });
 
             </script>
@@ -280,11 +304,11 @@
                         <span class="label" id="status_txt">Login</span><br><br>
 
 
-                        <form id="login_box" title="Login" style="">
+                        <!--form id="login_box" title="Login" style="">
                             <b>Username</b> <input type="text" name="username" value="" id="username"><br>
                             <b>Password</b> <input type="password" name="password" value="" id="password"><br>
                             <input class="btn" type="button" id="btn_login" onclick="login()" value="Login">
-                        </form>
+                        </form-->
 
                         <form id="callcontainer" style="display: none">
                             <input type="text" name="to" value="" id="to" placeholder="Phone number or a SIP URI"><br>
@@ -316,6 +340,9 @@
                             <a class="btn btn-info" href="#" onclick="dtmf('*');">*</a>
                             <a class="btn btn-info" href="#" onclick="dtmf('0');">0</a>
                             <a class="btn btn-info" href="#" onclick="dtmf('#');"> #</a><br>
+                        </div>
+
+                        <div id="calls-container">
                         </div>
                     </div>
                     <hr>
